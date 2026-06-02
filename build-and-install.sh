@@ -65,3 +65,7 @@ sed "s/__AVB_INTERFACE__/${AVB_INTERFACE}/g" \
     "$CONFIG_TEMPLATE" > "$GENERATED_CONFIG"
 
 echo "Created $GENERATED_CONFIG with $AVB_INTERFACE"
+# Install the generated config where PipeWire looks for it
+mkdir -p "$HOME/.config/pipewire"
+cp "$GENERATED_CONFIG" "$HOME/.config/pipewire/pipewire-avb.conf"
+echo "Installed pipewire-avb.conf to ~/.config/pipewire/"
