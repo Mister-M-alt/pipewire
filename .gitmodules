@@ -1,3 +1,4 @@
 [submodule "pipewire"]
 	path = pipewire-upstream
 	url = https://gitlab.freedesktop.org/Mister-M-alt/pipewire.git
+	branch = milan-avb-stabilizing-milan-extra
