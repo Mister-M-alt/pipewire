@@ -28,22 +28,19 @@ separate terminal as follows:
 > Keep this terminal running while using Milan-AVB.
 > The gPTP synchronization services must remain active during operation.
 
+> [!NOTE]
+> ptp4l disciplines the NIC PHC directly and PipeWire reads gPTP time from the PHC.
+> phc2sys is not used, and NTP is left enabled on the system clock.
+
 ```bash
 cd ~/pipewire
 ./ptp-start.sh
+Selected interface: enp2s0
 sending: SET GRANDMASTER_SETTINGS_NP
-phc2sys[2050.269]: Waiting for ptp4l...
-phc2sys[2051.269]: Waiting for ptp4l...
-phc2sys[2052.269]: Waiting for ptp4l...
-phc2sys[2053.269]: Waiting for ptp4l...
-phc2sys[2054.270]: CLOCK_REALTIME phc offset 37030500695 s0 freq      -0 delay   2174
-phc2sys[2055.270]: CLOCK_REALTIME phc offset 37030515520 s1 freq  +14823 delay   2154
-phc2sys[2056.270]: CLOCK_REALTIME phc offset       -19 s2 freq  +14804 delay   2164
-phc2sys[2057.270]: CLOCK_REALTIME phc offset       -32 s2 freq  +14785 delay   2164
-phc2sys[2058.270]: CLOCK_REALTIME phc offset       -33 s2 freq  +14775 delay   2164
-phc2sys[2059.270]: CLOCK_REALTIME phc offset        51 s2 freq  +14849 delay   2144
-phc2sys[2060.270]: CLOCK_REALTIME phc offset        -7 s2 freq  +14806 delay   2144
-phc2sys[2061.270]: CLOCK_REALTIME phc offset         0 s2 freq  +14811 delay   2124
+ptp4l[2050.269]: rms 37030500695 max 37030515520 freq  -0 +/-   0 delay  2174 +/-   0
+ptp4l[2051.269]: rms       12 max       34 freq -26000 +/- 102 delay  2164 +/-  12
+ptp4l[2052.269]: rms        4 max        9 freq -26010 +/-  45 delay  2160 +/-  10
+ptp4l[2053.269]: rms        2 max        5 freq -26005 +/-  18 delay  2158 +/-   8
 ```
 
 ---

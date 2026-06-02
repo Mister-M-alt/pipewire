@@ -22,23 +22,19 @@ echo "Selected interface: $IFACE"
 function kill_all() {
     echo "Stopping PTP services..."
     sudo pkill ptp4l
-    sudo pkill phc2sys
-    sudo timedatectl set-ntp true
 }
 
 trap kill_all SIGINT EXIT
 
-sudo timedatectl set-ntp false
+# Keep NTP enabled. ptp4l disciplines the NIC PHC directly and PipeWire reads gPTP
+# time from the PHC, so the system clock (CLOCK_REALTIME) stays independent and NTP
+# can keep it on wall-clock time. phc2sys is no longer used.
+sudo timedatectl set-ntp true
 
-# Start ptp4l
+# Start ptp4l (disciplines the PHC; --step_threshold lets it step a large initial offset)
 sudo ptp4l -i "$IFACE" -f ~/linuxptp/configs/gPTP.cfg --step_threshold=1 &
 PTP_PID=$!
 sudo chrt -f -p 53 "$PTP_PID"
-
-# Start phc2sys
-sudo phc2sys -s "$IFACE" -c CLOCK_REALTIME --step_threshold=1 --transportSpecific=1 -w -m &
-PHC2SYS_PID=$!
-sudo chrt -f -p 52 "$PHC2SYS_PID"
 
 # Set grandmaster settings
 sudo pmc -u -b 0 -t 1 "SET GRANDMASTER_SETTINGS_NP clockClass 247 \
@@ -47,6 +43,5 @@ sudo pmc -u -b 0 -t 1 "SET GRANDMASTER_SETTINGS_NP clockClass 247 \
     ptpTimescale 1 timeTraceable 1 frequencyTraceable 0 \
     timeSource 0xa0"
 
-# Wait for background processes
+# Wait for ptp4l
 wait "$PTP_PID"
-wait "$PHC2SYS_PID"
