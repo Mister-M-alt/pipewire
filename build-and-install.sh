@@ -69,3 +69,8 @@ echo "Created $GENERATED_CONFIG with $AVB_INTERFACE"
 mkdir -p "$HOME/.config/pipewire"
 cp "$GENERATED_CONFIG" "$HOME/.config/pipewire/pipewire-avb.conf"
 echo "Installed pipewire-avb.conf to ~/.config/pipewire/"
+
+# Also install the generated (milan=true) config system-wide so a daemon started by
+# any user (e.g. root, which has no ~alex/.config) loads it instead of the milan=false default
+sudo cp "$GENERATED_CONFIG" /usr/share/pipewire/pipewire-avb.conf
+echo "Installed pipewire-avb.conf to /usr/share/pipewire/ (system default)"
