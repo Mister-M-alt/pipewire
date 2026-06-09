@@ -6,6 +6,11 @@
 # SPDX-License-Identifier: MIT
 
 # Part of the code taken from https://tsn.readthedocs.io/
+RT_PRIO="${RT_PRIO:-95}"                          # rtprio for ptp4l (PipeWire needs it too)
+
+# Configuration
+GPTP_CFG="${GPTP_CFG:-./gPTP.cfg}"   # --gptp-cfg
+
 
 # Use AVB_INTERFACE from environment if no argument is passed
 IFACE="${1:-$AVB_INTERFACE}"
@@ -24,26 +29,31 @@ function kill_all() {
     sudo pkill ptp4l
 }
 
+# gPTP: ptp4l only. NTP owns CLOCK_REALTIME; ptp4l owns the NIC PHC. phc2sys would fight NTP.
+start_gptp() {
+    log "gPTP: ptp4l on ${IFACE} (no phc2sys; NTP owns REALTIME)"
+    pkill -x phc2sys 2>/dev/null || true
+    pkill -x ptp4l   2>/dev/null || true
+    sleep 1
+    setsid "$PTP4L_BIN" -f "$GPTP_CFG" -i "$IFACE" -m >"$PTP4L_LOG" 2>&1 </dev/null &
+    sleep 4
+    log "  ptp4l: $(tail -n1 "$PTP4L_LOG" | grep -oE 'rms +[0-9]+|to SLAVE|grand master' || echo '(starting)')"
+}
+
+
+function raise_rt_limits() {
+    ulimit -r "$RT_PRIO" 2>/dev/null || warn "could not set rtprio $RT_PRIO"
+    ulimit -l unlimited  2>/dev/null || true
+}
+
+
 trap kill_all SIGINT EXIT
 
-# Keep NTP enabled. ptp4l disciplines the NIC PHC directly and PipeWire reads gPTP
-# time from the PHC, so the system clock (CLOCK_REALTIME) stays independent and NTP
-# can keep it on wall-clock time. phc2sys is no longer used.
-sudo timedatectl set-ntp true
-
+raise_rt_limits
 # Start ptp4l (disciplines the PHC; --step_threshold lets it step a large initial offset)
-sudo ptp4l -i "$IFACE" -f ~/linuxptp/configs/gPTP.cfg --step_threshold=1 &
+sudo ptp4l -i "$IFACE" -f ./gPTP.cfg --step_threshold=1 &
 PTP_PID=$!
-sudo chrt -f -p 53 "$PTP_PID"
 
-# Set grandmaster settings (optional: skip if pmc is not installed)
-if command -v pmc >/dev/null 2>&1; then
-sudo pmc -u -b 0 -t 1 "SET GRANDMASTER_SETTINGS_NP clockClass 247 \
-    clockAccuracy 0xfe offsetScaledLogVariance 0xffff \
-    currentUtcOffset 37 leap61 0 leap59 0 currentUtcOffsetValid 1 \
-    ptpTimescale 1 timeTraceable 1 frequencyTraceable 0 \
-    timeSource 0xa0"
-fi
 
 # Wait for ptp4l
 wait "$PTP_PID"
