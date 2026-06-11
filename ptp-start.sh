@@ -42,7 +42,7 @@ start_gptp() {
 
 
 function raise_rt_limits() {
-    ulimit -r "$RT_PRIO" 2>/dev/null || warn "could not set rtprio $RT_PRIO"
+    ulimit -r "$RT_PRIO" 2>/dev/null || echo "could not set rtprio $RT_PRIO"
     ulimit -l unlimited  2>/dev/null || true
 }
 
